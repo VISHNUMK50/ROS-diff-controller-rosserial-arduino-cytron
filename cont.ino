@@ -1,6 +1,5 @@
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
-#include <std_msgs/Float32.h>
 
 
 #define l_dir 13 
@@ -19,9 +18,7 @@ float min_pwm_val = 0;           // Minimum PWM value that is needed for the rob
 float wheel_radius = wheel_diameter/2;
 float circumference_of_wheel = 2 * 3.14 * wheel_radius;
 float max_speed = (circumference_of_wheel*motor_rpm)/60 ;  //   m/sec
-std_msgs::Float32 left_wheel_tick_count;
 
-std_msgs::Float32 right_wheel_tick_count;
 
 void onTwist(const geometry_msgs::Twist& msg)
 {
@@ -37,8 +34,7 @@ void onTwist(const geometry_msgs::Twist& msg)
     
     float right_vel = ( VrplusVl + VrminusVl ) / 2;   // # right wheel velocity along the ground
     float left_vel  = VrplusVl - right_vel;  // # left wheel velocity along the ground
-     left_wheel_tick_count.data = left_vel;
-     right_wheel_tick_count.data = right_vel ;
+     
     //print (str(left_vel)+"\t"+str(right_vel))
     
     if (left_vel == 0.0 and right_vel == 0.0){
@@ -53,8 +49,8 @@ void onTwist(const geometry_msgs::Twist& msg)
 void wheel_vel_executer(float left_speed, float right_speed){
     
     
-    float rspeedPWM = max(min(((abs(left_speed)/max_speed)*max_pwm_val),max_pwm_val),min_pwm_val);
-    float lspeedPWM = max(min(((abs(right_speed)/max_speed)*max_pwm_val),max_pwm_val),min_pwm_val);
+    float lspeedPWM = max(min(((abs(left_speed)/max_speed)*max_pwm_val),max_pwm_val),min_pwm_val);  // Left Wheel
+    float rspeedPWM = max(min(((abs(right_speed)/max_speed)*max_pwm_val),max_pwm_val),min_pwm_val); // Right Wheel
     analogWrite(l_pwm,lspeedPWM);
     analogWrite(r_pwm,rspeedPWM);
     
@@ -82,8 +78,7 @@ ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel",onTwist);
 
 ros::NodeHandle nh;
 
-ros::Publisher rightPub("right_ticks", &right_wheel_tick_count);
-ros::Publisher leftPub("left_ticks", &left_wheel_tick_count);
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -93,8 +88,7 @@ void setup() {
   pinMode(r_dir,OUTPUT);
   nh.initNode();
   nh.subscribe(sub);
-  nh.advertise(rightPub);
-  nh.advertise(leftPub);
+
   analogWrite(l_pwm,0);
   analogWrite(r_pwm,0);
   digitalWrite(l_dir,HIGH);
@@ -104,8 +98,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  rightPub.publish( &right_wheel_tick_count );
-   leftPub.publish( &left_wheel_tick_count );
+
   nh.spinOnce();
   
 }
